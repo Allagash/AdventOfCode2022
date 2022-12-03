@@ -8,7 +8,8 @@ fun main() {
             in 'A'..'Z' -> input.code - 'A'.code + 27
             else -> {
                 check(false)
-                -100000 }
+                -100000
+            }
         }
 
     fun part1(input: List<String>): Int {
@@ -20,7 +21,7 @@ fun main() {
 
             val intersect = first.intersect(second)
             //println(intersect)
-            check(intersect.size == 1);
+            check(intersect.size == 1)
             total += getScore(intersect.first())
         }
         return total
