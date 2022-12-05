@@ -1,4 +1,4 @@
-// Advent of Code 2022, Day 05, Camp Cleanup
+// Advent of Code 2022, Day 05, Supply Stacks
 
 fun main() {
 
@@ -74,7 +74,7 @@ fun main() {
      var parsedTestInput = parse(readInput("Day05_test"))
     //println(parsedTestInput)
     check(part1(parsedTestInput) == "CMZ")
-    parsedTestInput = parse(readInput("Day05_test"))
+    parsedTestInput = parse(readInput("Day05_test"))  // reset mutable parsed input
     check(part2(parsedTestInput) == "MCD")
 
     var input = parse(readInput("Day05"))
