@@ -15,10 +15,15 @@ fun main() {
                     var totalSize: Long = 0
     )
 
+    fun calcTotal(input:Node): Long {
+        input.totalSize = input.subDirs.values.fold(0L) { acc, next -> acc + calcTotal(next) }
+        input.totalSize += input.files.values.sumOf { it.size }
+        return input.totalSize
+    }
+
     fun parse(input: String) : Node {
         val root = Node("/", null)
         var curr: Node = root
-
         val commands = input.split("$")
 
         for (cmd in commands) {
@@ -31,8 +36,7 @@ fun main() {
                 curr = curr.parent!! // but in macOS it's ok to cd.. from /
             } else if (line.substring(0, 2) == "ls") {
                 val contents = line.split("\n").map { it.trim() }
-                for (sub in contents.drop(1)) {
-                    //println("sub is $sub")
+                for (sub in contents.drop(1)) { // drop initial empty string
                     val parts = sub.split(" ").map{ it.trim() }
                     if (parts[0].isEmpty()) continue
                     if (parts[0] == "dir" ) {
@@ -47,58 +51,42 @@ fun main() {
                 check(curr.subDirs.contains(dir))
                 curr = curr.subDirs[dir]!!
             }
-
         }
+        calcTotal(root)
         return root
-    }
-
-    var overall = 0L
-
-    val nodeList = mutableListOf<Node>()
-
-    fun calcTotal(input:Node): Long {
-        var total = 0L
-        input.subDirs.forEach {
-            total += calcTotal(it.value)
-        }
-        input.files.forEach {
-            total += it.value.size
-        }
-        input.totalSize = total
-        if (total <= 100000) {
-            overall += total
-        }
-        nodeList.add(input)
-        return total
     }
 
 
     fun part1(input:Node): Long {
-        overall = 0
-        nodeList.clear()
-        calcTotal(input)
-
+        var overall = 0L
+        val nodeQueue = mutableListOf<Node>()
+        nodeQueue.add(input)
+        while(nodeQueue.isNotEmpty()) {
+            val node = nodeQueue.removeFirst()
+            if (node.totalSize <= 100_000) {
+                overall += node.totalSize
+            }
+            nodeQueue.addAll(node.subDirs.values)
+        }
         return overall
     }
 
     fun part2(input:Node): Long {
-        overall = 0
-        nodeList.clear()
-        calcTotal(input)
+        val freeSpace = 70_000_000L - input.totalSize
+        val needToFree = 30_000_000L - freeSpace
+        check(freeSpace > 0)
 
-        val freeSpace = 70000000L - input.totalSize
-        check(freeSpace < 30000000L)
-
-        val needToFree = 30000000L - freeSpace
-
-        nodeList.sortBy { it.totalSize }
-        for (node in nodeList) {
-            if (node.totalSize >= needToFree) {
-                return node.totalSize
+        val nodeQueue = mutableListOf<Node>()
+        nodeQueue.add(input)
+        var size = Long.MAX_VALUE
+        while(nodeQueue.isNotEmpty()) {
+            val node = nodeQueue.removeFirst()
+            if (node.totalSize in needToFree until size) {
+                size = node.totalSize
             }
+            nodeQueue.addAll(node.subDirs.values)
         }
-
-        return 0
+        return size
     }
 
     val testInput = parse(readInputAsOneLine("Day07_test"))
