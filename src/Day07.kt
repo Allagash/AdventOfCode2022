@@ -93,7 +93,7 @@ fun main() {
     check(part1(testInput) == 95437L)
     check(part2(testInput) == 24933642L)
 
-    val input = readInputAsOneLine("Day07")
-    println(part1(parse(input)))
-    println(part2(parse(input)))
+    val input = parse(readInputAsOneLine("Day07"))
+    println(part1(input))
+    println(part2(input))
 }
