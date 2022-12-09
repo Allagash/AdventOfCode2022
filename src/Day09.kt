@@ -8,25 +8,24 @@ fun main() {
 
     fun readInput(name: String) = File("src", "$name.txt").readLines()
 
-    data class Pos(var x: Int, var y: Int)
+    data class Pos(val x: Int, val y: Int)
 
-    fun getHeadMoves(input: List<String>) : List<Pos> {
-        val headMoves = mutableListOf <Pos>()
+    fun getHeadMoves(input: List<String>): List<Pos> {
+        val headMoves = mutableListOf<Pos>()
         var head = Pos(0, 0)
-        headMoves.add(head.copy())
+        headMoves.add(head)
         input.forEach {
             val move = it.split(" ")
-            val newDir = Pos(0, 0)
-            when (move[0]) {
-                "R" -> newDir.x += 1
-                "L" -> newDir.x -= 1
-                "U" -> newDir.y += 1
-                "D" -> newDir.y -= 1
-                else -> check(false)
-            }
+            val newDir =
+                when (move[0]) {
+                    "R" -> Pos(1, 0)
+                    "L" -> Pos(-1, 0)
+                    "U" -> Pos(0, 1)
+                    else -> Pos(0, -1)
+                }
             repeat(move[1].toInt()) {
                 head = Pos(head.x + newDir.x, head.y + newDir.y)
-                headMoves.add(head.copy())
+                headMoves.add(head)
             }
         }
         return headMoves
@@ -36,14 +35,14 @@ fun main() {
         val headMoves = getHeadMoves(input)
         val tailMoves = mutableSetOf <Pos>()
         var tail = Pos(0, 0)
-        tailMoves.add(tail.copy())
+        tailMoves.add(tail)
         headMoves.forEach {
             val movedALot = abs(it.x - tail.x) > 1 || abs(it.y - tail.y) > 1
             if (movedALot) {
                 val moveX = (it.x - tail.x).sign
                 val moveY = (it.y - tail.y).sign
                 tail = Pos(tail.x + moveX, tail.y + moveY)
-                tailMoves.add(tail.copy())
+                tailMoves.add(tail)
             }
         }
         return tailMoves.size
@@ -79,7 +78,7 @@ fun main() {
                     ropePos[i + 1] = Pos(next.x + moveX, next.y + moveY)
                 } // else break out of repeat loop?
             }
-            tailMoves.add(ropePos.last().copy())
+            tailMoves.add(ropePos.last())
         }
         return tailMoves.size
     }
