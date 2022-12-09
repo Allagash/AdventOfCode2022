@@ -13,7 +13,7 @@ fun main() {
     fun getHeadMoves(input: List<String>) : List<Pos> {
         val headMoves = mutableListOf <Pos>()
         var head = Pos(0, 0)
-        headMoves.add(head)
+        headMoves.add(head.copy())
         input.forEach {
             val move = it.split(" ")
             val newDir = Pos(0, 0)
@@ -26,7 +26,7 @@ fun main() {
             }
             repeat(move[1].toInt()) {
                 head = Pos(head.x + newDir.x, head.y + newDir.y)
-                headMoves.add(head)
+                headMoves.add(head.copy())
             }
         }
         return headMoves
@@ -36,20 +36,15 @@ fun main() {
         val headMoves = getHeadMoves(input)
         val tailMoves = mutableSetOf <Pos>()
         var tail = Pos(0, 0)
-        var headPrev = Pos(0, 0)
-        tailMoves.add(tail)
+        tailMoves.add(tail.copy())
         headMoves.forEach {
             val movedALot = abs(it.x - tail.x) > 1 || abs(it.y - tail.y) > 1
             if (movedALot) {
-                tail = headPrev
-                tailMoves.add(tail)
-//                val moveX = (it.x - tail.x).sign
-//                val moveY = (it.y - tail.y).sign
-//                tail.x += moveX
-//                tail.y += moveY
-//                tailMoves.add(tail)
+                val moveX = (it.x - tail.x).sign
+                val moveY = (it.y - tail.y).sign
+                tail = Pos(tail.x + moveX, tail.y + moveY)
+                tailMoves.add(tail.copy())
             }
-            headPrev = it
         }
         return tailMoves.size
     }
@@ -72,10 +67,7 @@ fun main() {
         val tailMoves = mutableSetOf <Pos>()
         tailMoves.add(Pos(0, 0))
         val ropePos = Array(10) {Pos(0, 0)}
-        //val prevPos = Array<Pos>(9) {Pos(0, 0)}
-        var count = 0
         headMoves.forEach {
-//            println("head move is $it")
             ropePos[0] = it
             repeat(9) {i ->
                 val lead = ropePos[i]
@@ -84,29 +76,22 @@ fun main() {
                 if (movedALot) {
                     val moveX = (lead.x - next.x).sign
                     val moveY = (lead.y - next.y).sign
-                    ropePos[i + 1].x += moveX
-                    ropePos[i + 1].y += moveY
-//                    println("moved a lot, tail is not at $tail")
-                } // else break?
-                //prevPos[i] = lead
+                    ropePos[i + 1] = Pos(next.x + moveX, next.y + moveY)
+                } // else break out of repeat loop?
             }
-            tailMoves.add(ropePos.last())
-            //println("after move $count")
-            // printGrid(ropePos)
-            count++
+            tailMoves.add(ropePos.last().copy())
         }
         return tailMoves.size
     }
 
     val testInput = readInput("Day09_test")
-    //println(part2(testInput))
-    val testInput2 = readInput("Day09_test2")
-    println(part2(testInput2))
-
     check(part1(testInput) == 13)
-    //check(part2(testInput) == 8)
+    check(part2(testInput) == 1)
+
+    val testInput2 = readInput("Day09_test2")
+    check(part2(testInput2) == 36)
 
     val input = readInput("Day09")
     println(part1(input))
-    //println(part2(input)) // 2288 too low, 4898 too high
+    println(part2(input))
 }
