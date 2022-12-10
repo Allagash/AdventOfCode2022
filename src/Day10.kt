@@ -25,35 +25,29 @@ fun main() {
         return sum
     }
 
-
     fun part2(input: List<String>) {
         val crt = mutableListOf<String>()
         var line = ""
         var cycle = 1
         var regX = 1
-        var lineIdx = 0
         input.forEach {
-            line += if (lineIdx in regX-1..regX+1) "#" else "."
+            line += if ((cycle -1) % 40 in regX-1..regX+1) "#" else "."
+            if (line.length >= 40) {
+                crt.add(line)
+                line = ""
+            }
 
             val instruction = it.split(" ")
             if (instruction[0] == "addx") {
                 cycle++
-                lineIdx++
-                line += if (lineIdx in regX-1..regX+1) "#" else "."
-                if (lineIdx >= 40) {
+                line += if ((cycle -1) % 40 in regX-1..regX+1) "#" else "."
+                if (line.length >= 40) {
                     crt.add(line)
                     line = ""
-                    lineIdx = 0
                 }
                 regX += instruction[1].toInt()
             }
             cycle++
-            lineIdx++
-            if (lineIdx >= 40) {
-                crt.add(line)
-                line = ""
-                lineIdx = 0
-            }
         }
         println("CRT is:")
         crt.forEach { println(it) }
