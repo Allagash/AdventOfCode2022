@@ -21,7 +21,7 @@ fun main() {
             lines.forEach {
                 when {
                     it.startsWith("Starting items:") -> {
-                        items = it.substringAfter(":").split(",").map{it.trim().toLong()}
+                        items = it.substringAfter(":").split(",").map{j -> j.trim().toLong()}
                     }
                     it.startsWith("Operation:") -> {
                         op = it.substringAfter("Operation: new = old ").split(" ")
@@ -83,9 +83,11 @@ fun main() {
                 }
             }
         }
-        monkeys.forEachIndexed { index, monkey -> println("Monkey $index, ${monkey.inspections} inspections")}
-        val sortedMonkeys = monkeys.sortedByDescending { it.inspections }
-        return sortedMonkeys[0].inspections * sortedMonkeys[1].inspections
+        // monkeys.forEachIndexed { index, monkey -> println("Monkey $index, ${monkey.inspections} inspections")}
+        return monkeys.map { it.inspections }
+            .sortedDescending()
+            .take(2)
+            .reduce { acc, l ->  acc * l}
     }
 
     var testInput = parse(readInputAsOneLine("Day11_test"))
