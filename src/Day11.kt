@@ -25,16 +25,15 @@ fun main() {
         )
     }
 
-    fun applyOp(level: Long, op: List<String>): Long {
-        var output = level
-        val second = if (op[1] == "old") level else op[1].toLong()
+    fun applyOp(level: Long, op: List<String>) =
         when (op[0]) {
-            "*" -> output *= second
-            "+" -> output += second
-            else -> check(false)
+            "*" -> level * if (op[1] == "old") level else op[1].toLong()
+            "+" -> level + if (op[1] == "old") level else op[1].toLong()
+            else -> {
+                check(false)
+                0
+            }
         }
-        return output
-    }
 
     fun solve(monkeys: List<Monkey>, part1: Boolean): Long {
         val modVal = monkeys.fold(1L) { acc, monkey -> acc * monkey.test.toLong() }
