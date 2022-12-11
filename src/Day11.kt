@@ -6,7 +6,7 @@ fun main() {
 
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText().trim()
 
-    data class Monkey(val items: MutableList<Long>, val operation: List<String>, val test: Int, val monkeys: List<Int>, var inspections: Long = 0)
+    data class Monkey(val items: MutableList<Long>, val operation: List<String>, val test: Int, val monkeys: List<Int>)
 
     fun parse(input: String) : List<Monkey> {
         val output = mutableListOf<Monkey>()
@@ -53,50 +53,37 @@ fun main() {
         return output
     }
 
-    fun part1(monkeys: List<Monkey>): Long {
-        repeat(20) {
-            monkeys.forEach {monkey->
-                monkey.inspections += monkey.items.size
-                while (monkey.items.isNotEmpty()) {
-                    val item = monkey.items.removeFirst()
-                    val newLevel = applyOp(item, monkey.operation) / 3
-                    val newMonkey = if (newLevel % monkey.test == 0L) monkey.monkeys[0] else monkey.monkeys[1]
-                    monkeys[newMonkey].items.add(newLevel)
-                }
-            }
-        }
-        val sortedMonkeys = monkeys.sortedByDescending { it.inspections }
-        return sortedMonkeys[0].inspections * sortedMonkeys[1].inspections
-    }
-
-    fun part2(monkeys: List<Monkey>) : Long {
+    fun solve(monkeys: List<Monkey>, part1: Boolean) : Long {
         val modVal = monkeys.fold(1L) { acc, monkey ->  acc * monkey.test.toLong()}
+        val rounds = if (part1) 20 else 10_000
+        val inspections = LongArray(monkeys.size)
 
-        repeat(10_000) {
-            monkeys.forEach {monkey->
-                monkey.inspections += monkey.items.size
+        repeat(rounds) {
+            monkeys.forEachIndexed() {i, monkey->
+                inspections[i] = inspections[i] + monkey.items.size
                 while (monkey.items.isNotEmpty()) {
                     val item = monkey.items.removeFirst()
-                    val newLevel = applyOp(item, monkey.operation) % modVal
+                    var newLevel = applyOp(item, monkey.operation)
+                    newLevel = if (part1) newLevel / 3 else newLevel % modVal
                     val newMonkey = if (newLevel % monkey.test == 0L) monkey.monkeys[0] else monkey.monkeys[1]
                     monkeys[newMonkey].items.add(newLevel)
                 }
             }
         }
         // monkeys.forEachIndexed { index, monkey -> println("Monkey $index, ${monkey.inspections} inspections")}
-        return monkeys.map { it.inspections }
+        return inspections
             .sortedDescending()
             .take(2)
             .reduce { acc, l ->  acc * l}
     }
 
     var testInput = parse(readInputAsOneLine("Day11_test"))
-    check(part1(testInput) == 10605L)
+    check(solve(testInput.toList(), true) == 10605L)
     testInput = parse(readInputAsOneLine("Day11_test"))
-    check(part2(testInput) == 2713310158L)
+    check(solve(testInput, false) == 2713310158L)
 
     var input = parse(readInputAsOneLine("Day11"))
-    println(part1(input))
+    println(solve(input, true))
     input = parse(readInputAsOneLine("Day11"))
-    println(part2(input)) // 13320449198 too log
+    println(solve(input, false))
 }
