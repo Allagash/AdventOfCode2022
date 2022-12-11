@@ -14,22 +14,15 @@ fun main() {
         val monkeyFalse: Int
     )
 
-    fun parse(input: String): List<Monkey> {
-        val output = mutableListOf<Monkey>()
-        val monkeyInput = input.split("\n\n")
-        monkeyInput.forEach { it ->
-            val lines = it.split("\n").map { it.trim() }
-            output.add(
-                Monkey(
-                    lines[1].substringAfter(":").split(",").map { j -> j.trim().toLong() }.toMutableList(),
-                    lines[2].substringAfter("Operation: new = old ").split(" "),
-                    lines[3].substringAfter("Test: divisible by ").toInt(),
-                    lines[4].substringAfter("If true: throw to monkey ").toInt(),
-                    lines[5].substringAfter("If false: throw to monkey ").toInt()
-                )
-            )
-        }
-        return output
+    fun parse(input: String) = input.split("\n\n").map {
+        val lines = it.split("\n").map { i -> i.trim() }
+        Monkey(
+            lines[1].substringAfter(":").split(",").map { j -> j.trim().toLong() }.toMutableList(),
+            lines[2].substringAfter("Operation: new = old ").split(" "),
+            lines[3].substringAfter("Test: divisible by ").toInt(),
+            lines[4].substringAfter("If true: throw to monkey ").toInt(),
+            lines[5].substringAfter("If false: throw to monkey ").toInt()
+        )
     }
 
     fun applyOp(level: Long, op: List<String>): Long {
@@ -61,10 +54,7 @@ fun main() {
             }
         }
         // monkeys.forEachIndexed { index, monkey -> println("Monkey $index, ${monkey.inspections} inspections")}
-        return inspections
-            .sortedDescending()
-            .take(2)
-            .reduce { acc, l -> acc * l }
+        return inspections.sortedDescending().take(2).reduce { acc, l -> acc * l }
     }
 
     var testInput = parse(readInputAsOneLine("Day11_test"))
