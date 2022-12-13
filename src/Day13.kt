@@ -101,6 +101,18 @@ fun main() {
         return listPacketPairs
     }
 
+    fun part1(input: String): Int {
+        val parsed = parse(input)
+        var result = 0
+        parsed.forEachIndexed { i, pair ->
+            val compare = compare(pair.first, pair.second)
+            check(compare != 0)
+            if (compare < 0) {
+                result += i + 1 // 1-based index
+            }
+        }
+        return result
+    }
 
     fun part2(input: String) : Int  {
         val lines = input.split("\n").filter { it.isNotEmpty() }.toMutableList()
@@ -115,25 +127,10 @@ fun main() {
         return twoIdx * sixIdx
     }
 
-
-    fun part1(input: String): Int {
-        val parsed = parse(input)
-        var result = 0
-        parsed.forEachIndexed { i, pair ->
-            val compare = compare(pair.first, pair.second)
-            check(compare != 0)
-            if (compare < 0) {
-                result += i + 1 // 1-based index
-            }
-        }
-        return result
-    }
-
     val testInput = readInputAsOneLine("Day13_test")
     check(part1(testInput) == 13)
     check(part2(testInput) == 140)
-//    check(part2(testInput) == 29)
-//
+
     val input = readInputAsOneLine("Day13")
     println(part1(input))
     println(part2(input))
