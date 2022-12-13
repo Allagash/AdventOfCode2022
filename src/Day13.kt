@@ -24,24 +24,9 @@ fun compare(first: Packet, second: Packet) : Int {
     return first.size - second.size
 }
 
-data class PacketElement(val int: Int?, val list: List<PacketElement>?) : Comparable<PacketElement> {
-    override fun compareTo(other: PacketElement) : Int {
-        val diff = if (this.int != null && other.int != null) {
-            this.int - other.int
-        } else if (this.list != null && other.list != null) {
-            compare(this.list, other.list)
-        } else {
-            val firstPart = this.int?.let { listOf(PacketElement(it, null)) } ?: this.list
-            val secondPart = other.int?.let { listOf(PacketElement(it, null)) } ?: other.list
-            compare(firstPart!!, secondPart!!)
-        }
-        return diff
-    }
-}
+data class PacketElement(val int: Int?, val list: List<PacketElement>?)
 
 typealias Packet = List<PacketElement>
-
-private val aComparator: Comparator<Packet> = Comparator { lhs, rhs -> compare(lhs, rhs) }
 
 fun main() {
 
@@ -93,18 +78,10 @@ fun main() {
         input.split("\n\n")
             .map {it.split("\n").map { parsePacket(it) }.let { it[0] to it[1] } }
 
-    fun part1(input: String): Int {
-        val parsed = parse(input)
-        var result = 0
-        parsed.forEachIndexed { i, pair ->
-            val compare = compare(pair.first, pair.second)
-            check(compare != 0)
-            if (compare < 0) {
-                result += i + 1 // 1-based index
-            }
+    fun part1(input: String) =
+        parse(input).foldIndexed(0) { i, acc, pair ->
+            acc + if (compare(pair.first, pair.second) < 0) i + 1 else 0 // 1-based index
         }
-        return result
-    }
 
     fun part2(input: String) : Int  {
         val lines = input.split("\n").filter { it.isNotEmpty() }.toMutableList()
@@ -113,7 +90,7 @@ fun main() {
         val packets = lines.map { parsePacket(it) }.toMutableList()
         val two = packets[packets.lastIndex-1]
         val six = packets.last()
-        packets.sortWith(aComparator)
+        packets.sortWith { first, second -> compare(first, second) }
         val twoIdx = packets.indexOf(two) + 1 // 1 based index
         val sixIdx = packets.indexOf(six) + 1
         return twoIdx * sixIdx
