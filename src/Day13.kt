@@ -89,7 +89,7 @@ fun main() {
         return list.toList()
     }
 
-    fun parse(input: String): List<Pair<Packet, Packet>> =
+    fun parse(input: String) =
         input.split("\n\n")
             .map {it.split("\n").map { parsePacket(it) }.let { it[0] to it[1] } }
 
