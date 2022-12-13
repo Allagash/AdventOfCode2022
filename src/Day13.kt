@@ -89,17 +89,9 @@ fun main() {
         return list.toList()
     }
 
-    fun parse(input: String) : List<Pair<Packet, Packet>> {
-        val packetPairs = input.split("\n\n")
-        val listPacketPairs = mutableListOf<Pair<Packet, Packet>>()
-        packetPairs.forEach {
-            val packets = it.split("\n")
-            val first = parsePacket(packets[0])
-            val second = parsePacket(packets[1])
-            listPacketPairs.add(Pair(first, second))
-        }
-        return listPacketPairs
-    }
+    fun parse(input: String): List<Pair<Packet, Packet>> =
+        input.split("\n\n")
+            .map {it.split("\n").map { parsePacket(it) }.let { it[0] to it[1] } }
 
     fun part1(input: String): Int {
         val parsed = parse(input)
