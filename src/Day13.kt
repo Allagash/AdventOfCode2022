@@ -1,5 +1,4 @@
 import java.io.File
-import kotlin.math.max
 
 // Advent of Code 2022, Day 13, Distress Signal
 
@@ -41,6 +40,8 @@ data class PacketElement(val int: Int?, val list: List<PacketElement>?) : Compar
 }
 
 typealias Packet = List<PacketElement>
+
+private val aComparator: Comparator<Packet> = Comparator { lhs, rhs -> compare(lhs, rhs) }
 
 fun main() {
 
@@ -101,22 +102,18 @@ fun main() {
     }
 
 
-//    fun parse2(input: String) : List<Packet> {
-//        val lines = input.split("\n").filter { it.isNotEmpty() }.toMutableList()
-//        lines.add("[[2]]")
-//        lines.add("[[6]]")
-//        val packets = lines.map { parsePacket(it) }
-//        val two = packets[packets.lastIndex-1]
-//        val six = packets.last()
-//        packets.sortedBy {  }
-//        packetPairs.forEach {
-//            val packets = it.split("\n")
-//            val first = parsePacket(packets[0])
-//            val second = parsePacket(packets[1])
-//            listPacketPairs.add(Pair(first, second))
-//        }
-//        return listPacketPairs
-//    }
+    fun part2(input: String) : Int  {
+        val lines = input.split("\n").filter { it.isNotEmpty() }.toMutableList()
+        lines.add("[[2]]")
+        lines.add("[[6]]")
+        val packets = lines.map { parsePacket(it) }.toMutableList()
+        val two = packets[packets.lastIndex-1]
+        val six = packets.last()
+        packets.sortWith(aComparator)
+        val twoIdx = packets.indexOf(two) + 1 // 1 based index
+        val sixIdx = packets.indexOf(six) + 1
+        return twoIdx * sixIdx
+    }
 
 
     fun part1(input: String): Int {
@@ -132,15 +129,12 @@ fun main() {
         return result
     }
 
-    fun part2(grid: List<List<Int>>): Int {
-        return 0
-    }
-
     val testInput = readInputAsOneLine("Day13_test")
     check(part1(testInput) == 13)
+    check(part2(testInput) == 140)
 //    check(part2(testInput) == 29)
 //
     val input = readInputAsOneLine("Day13")
     println(part1(input))
-//    println(part2(input))
+    println(part2(input))
 }
