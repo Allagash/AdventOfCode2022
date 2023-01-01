@@ -14,7 +14,6 @@ fun main() {
 
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText().trim()
 
-
     fun part1(input: String, inputRow: Int): Int {
         val readings = input.split("\n")
             .map {
@@ -45,8 +44,9 @@ fun main() {
         return ptsInRange.size
     }
 
-    fun part2(input: String, maxCoord: Int): Long {
-        val readings = input.split("\n")
+    // Return a list of pairs. Each pair has a sensor position and a sensor range.
+    fun parse(input: String): List<Pair<Pair<Int, Int>, Int>> =
+        input.split("\n")
             .map {
                 it.split("Sensor at x=", ", y=", ": closest beacon is at x=")
                     .drop(1) // initial empty
@@ -57,12 +57,15 @@ fun main() {
                 Pair(sensor, dist)
             }
 
+    fun part2(input: String, maxCoord: Int): Long {
+        val readings = parse(input)
+
         repeat(maxCoord+1) {inputRow ->
             var xCoord = mutableListOf<Pair<Int, Int>>() // x ranges, inclusive
             xCoord.add(0 to maxCoord)
 
             run pointCheck@{
-                readings.forEachIndexed { i, it ->
+                readings.forEachIndexed { _, it ->
                     val range = it.second
                     val distToRow = abs(it.first.second - inputRow)
                     if (range < distToRow) {
@@ -111,6 +114,6 @@ fun main() {
     check(part2(testInput, 20) == 56000011L)
 
     val input = readInputAsOneLine("Day15")
-    println(part1(input, 2_000_000)) // 4919282 too high
+    println(part1(input, 2_000_000))
     println(part2(input, 4_000_000))
 }
