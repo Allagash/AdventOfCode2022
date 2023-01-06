@@ -1,6 +1,6 @@
 import java.io.File
 
-// Advent of Code 2022, Day 17, Boiling Boulders
+// Advent of Code 2022, Day 18, Boiling Boulders
 
 fun main() {
 
