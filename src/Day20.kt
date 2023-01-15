@@ -11,7 +11,7 @@ fun main() {
 
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText().trim()
 
-    fun part1(input: String, key: Int, repeatTimes: Int): Long {
+    fun solve(input: String, key: Int, repeatTimes: Int): Long {
         val numsBackup = input.split("\n").mapIndexed { idx, s -> Day20(s.toLong() * key, idx) }
         val nums = numsBackup.toMutableList()
         val size = numsBackup.size
@@ -35,10 +35,10 @@ fun main() {
     }
 
     val testInput = readInputAsOneLine("Day20_test")
-    check(part1(testInput, 1, 1)==3L)
-    check(part1(testInput, 811589153, 10)==1623178306L)
+    check(solve(testInput, 1, 1)==3L)
+    check(solve(testInput, 811589153, 10)==1623178306L)
 
     val input = readInputAsOneLine("Day20")
-    println(part1(input, 1, 1))
-    println(part1(input, 811589153, 10))
+    println(solve(input, 1, 1))
+    println(solve(input, 811589153, 10))
 }
