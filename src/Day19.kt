@@ -38,7 +38,6 @@ fun main() {
                     else -> b.numOre - a.numOre
                 }
             }
-        var result = 0
         val totalTime = if (part1) 24 else 32
         val results = mutableListOf<Int>()
 
@@ -50,43 +49,17 @@ fun main() {
             states.add(initialState)
             val cache = hashSetOf<OreState>()
             var maxGeodes = Int.MIN_VALUE
-            var prevMaxGeodes = Int.MIN_VALUE
             while (states.isNotEmpty()) {
                 var state = states.remove()
                 maxGeodes = maxOf(maxGeodes, state.numGeode)
                 if (state in cache || state.time <= 0) continue
-                // if we can't beat the max score, cull
-                // assume we can make 1 geode robot per term
+                // if we can't beat the max score, cull it.
+                // Assume we can make 1 geode robot per term, best case scenario.
                 val maxGeodesPossible = state.numGeode + (state.numGeodeRobots * state.time) + (state.time * (state.time - 1)) /2
                 if (maxGeodes > maxGeodesPossible) continue
-                //if (cache.size > 100_000_000) cache.clear()
                 cache.add(state)
-                if (maxGeodes > 0) {
-                    if (maxGeodes > prevMaxGeodes) {
-                        prevMaxGeodes = maxGeodes
-//                        println("$bluePrint - time ${state.time}, geodes $maxGeodes, queue size ${states.size}, cache size ${cache.size}")
-                    }
-                }
 
                 // See https://github.com/ritesh-singh/aoc-2022-kotlin/blob/main/src/day19/Day19.kt
-                // Reduce state by removing redundant robots
-//                if (state.numOreRobots >= maxOreCost) {
-//                    state = state.copy(
-//                        numOreRobots = maxOreCost
-//                    )
-//                }
-//                if (state.numClayRobots >= cost.obsidianRobotClayCost) {
-//                    state = state.copy(
-//                        numClayRobots = cost.obsidianRobotClayCost
-//                    )
-//                }
-//                if (state.numObsidianRobots >= cost.geodeRobotObsidianCost) {
-//                    state = state.copy(
-//                        numObsidianRobots = cost.geodeRobotObsidianCost
-//                    )
-//                }
-
-                // Reduce state by removing resources which won't be used
                 // Reduce state by removing resources not required per minute
                 if (state.numOre >= state.time * maxOreCost - state.numOreRobots * (state.time - 1)) {
                     state = state.copy(
@@ -103,7 +76,6 @@ fun main() {
                         numObsidian = state.time * cost.geodeRobotObsidianCost - state.numObsidianRobots * (state.time - 1)
                     )
                 }
-
 
                 // mine more minerals
                 states.add(
@@ -176,21 +148,20 @@ fun main() {
                     )
                 }
             }
-//            println("$bluePrint * $maxGeodes")
-            results.add(maxGeodes)
             if (part1) {
-                result += bluePrint * maxGeodes
+                results.add(bluePrint * maxGeodes)
+            } else {
+                results.add(maxGeodes)
             }
-//            println()
         }
-        return if (part1) result else results.fold(1) {total, it -> total * it }
+        return if (part1) results.sum() else results.fold(1) {total, it -> total * it }
     }
 
 
     val testInput = readInput("Day19_test")
     check(solve(testInput, true) == 33)
     check(solve(testInput, false) == 56 * 62)
-//
+
     val input = readInput("Day19")
     println(solve(input, true))
     println(solve(input, false))
