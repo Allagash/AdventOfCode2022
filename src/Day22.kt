@@ -60,78 +60,42 @@ class Day22(input: String) {
         var pos = startPos
         while (moves > 0) {
             moves--
-            if (dir == Direction.RIGHT) {
-                var next = pos.first to pos.second + 1
-                if (next.second > maze[pos.first].lastIndex) {
-                    next = pos.first to 0
-                }
-                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
-                    next = next.first to next.second + 1
-                    if (next.second > maze[pos.first].lastIndex) {
-                        next = pos.first to 0
-                    }
-                }
-                if (maze[next.first][next.second] == '#') {
-                    break
-                } else {
-                    maze[next.first][next.second] = dir.c
-                    pos = next
-                }
-            } else if (dir == Direction.LEFT) {
-                var next = pos.first to pos.second - 1
-                if (next.second < 0) {
-                    next = pos.first to maze[pos.first].lastIndex
-                }
-                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
-                    next = next.first to next.second - 1
-                    if (next.second < 0) {
-                        next = pos.first to maze[pos.first].lastIndex
-                    }
-                }
-                if (maze[next.first][next.second] == '#') {
-                    break
-                } else {
-                    maze[next.first][next.second] = dir.c
-                    pos = next
-                }
-            } else if (dir == Direction.DOWN) {
-                var next = pos.first + 1 to pos.second
-                if (next.first > maze.lastIndex) {
-                    next = 0 to pos.second
-                }
-                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
-                    next = next.first + 1 to next.second
-                    if (next.first > maze.lastIndex) {
-                        next = 0 to pos.second
-                    }
-                }
-                if (maze[next.first][next.second] == '#') {
-                    break
-                } else {
-                    maze[next.first][next.second] = dir.c
-                    pos = next
-                }
+            var next = Pair(pos.first + dir.vec.first, pos.second + dir.vec.second)
+            next = clamp(next, pos)
+            // wrap around
+            while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
+                next = Pair(next.first + dir.vec.first, next.second + dir.vec.second)
+                next = clamp(next, pos)
+            }
+
+            if (maze[next.first][next.second] == '#') {
+                break
             } else {
-                check(dir == Direction.UP)
-                var next = pos.first - 1 to pos.second
-                if (next.first < 0) {
-                    next = maze.lastIndex to pos.second
-                }
-                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
-                    next = next.first - 1 to next.second
-                    if (next.first < 0) {
-                        next = maze.lastIndex to pos.second
-                    }
-                }
-                if (maze[next.first][next.second] == '#') {
-                    break
-                } else {
-                    maze[next.first][next.second] = dir.c
-                    pos = next
-                }
+                maze[next.first][next.second] = dir.c
+                pos = next
             }
         }
         return pos
+    }
+
+    private fun clamp(
+        next: Pair<Int, Int>,
+        pos: Pair<Int, Int>
+    ): Pair<Int, Int> {
+        var next1 = next
+        if (next1.second > maze[pos.first].lastIndex) {
+            next1 = pos.first to 0
+        }
+        if (next1.second < 0) {
+            next1 = pos.first to maze[pos.first].lastIndex
+        }
+        if (next1.first > maze.lastIndex) {
+            next1 = 0 to pos.second
+        }
+        if (next1.first < 0) {
+            next1 = maze.lastIndex to pos.second
+        }
+        return next1
     }
 
     fun part1(): Long  {
