@@ -2,10 +2,9 @@ import java.io.File
 
 // Advent of Code 2022, Day 21: Monkey Math
 
-data class Day21Exp(val name: String, var value: Long? = null,  var var1: String? = null,
-    var op:Char? = null, var var2: String? = null)
-
 class Day21(input: String) {
+    data class Day21Exp(val name: String, var value: Long? = null,  var var1: String? = null,
+                        var op:Char? = null, var var2: String? = null)
 
     companion object {
         private val DAY21_PATTERN_VAL = """(\w+): (\d+)""".toRegex()
