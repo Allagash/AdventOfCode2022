@@ -29,11 +29,11 @@ class Day22(input: String) {
         }
     }
 
-    enum class Direction(val num: Int, val c: Char) {
-        RIGHT(0, '>'),
-        DOWN(1, 'V'),
-        LEFT(2, '<'),
-        UP(3, '^');
+    enum class Direction(val num: Int, val c: Char, val vec: Pair<Int, Int>) {
+        RIGHT(0, '>', Pair(0, 1)),
+        DOWN(1, 'V', Pair(1, 0)),
+        LEFT(2, '<', Pair(0, -1)),
+        UP(3, '^', Pair(-1, 0));
 
         fun turnRight() : Direction {
             return when (this) {
@@ -55,7 +55,7 @@ class Day22(input: String) {
     }
 
     private fun move(moveAmt: Int, startPos: Pair<Int, Int>, dir: Direction) : Pair<Int, Int> {
-        println("move is $moveAmt in ${dir.name} direction, start pos $startPos")
+//        println("move is $moveAmt in ${dir.name} direction, start pos $startPos")
         var moves = moveAmt
         var pos = startPos
         while (moves > 0) {
@@ -65,54 +65,51 @@ class Day22(input: String) {
                 if (next.second > maze[pos.first].lastIndex) {
                     next = pos.first to 0
                 }
-                while (maze[next.first][next.second] != '.' &&
-                    maze[next.first][next.second] != '#') {
-                    next = next.first to next.second + 1 // this crashes - will go off the end
+                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
+                    next = next.first to next.second + 1
                     if (next.second > maze[pos.first].lastIndex) {
                         next = pos.first to 0
                     }
                 }
-                if (maze[next.first][next.second] == '.') {
+                if (maze[next.first][next.second] == '#') {
+                    break
+                } else {
                     maze[next.first][next.second] = dir.c
                     pos = next
-                } else if (maze[next.first][next.second] == '#') {
-                    break
                 }
             } else if (dir == Direction.LEFT) {
                 var next = pos.first to pos.second - 1
                 if (next.second < 0) {
                     next = pos.first to maze[pos.first].lastIndex
                 }
-                while (maze[next.first][next.second] != '.' &&
-                    maze[next.first][next.second] != '#') {
+                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
                     next = next.first to next.second - 1
                     if (next.second < 0) {
                         next = pos.first to maze[pos.first].lastIndex
                     }
                 }
-                if (maze[next.first][next.second] == '.') {
+                if (maze[next.first][next.second] == '#') {
+                    break
+                } else {
                     maze[next.first][next.second] = dir.c
                     pos = next
-                } else if (maze[next.first][next.second] == '#') {
-                    break
                 }
             } else if (dir == Direction.DOWN) {
                 var next = pos.first + 1 to pos.second
                 if (next.first > maze.lastIndex) {
                     next = 0 to pos.second
                 }
-                while (maze[next.first][next.second] != '.' &&
-                    maze[next.first][next.second] != '#') {
+                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
                     next = next.first + 1 to next.second
                     if (next.first > maze.lastIndex) {
                         next = 0 to pos.second
                     }
                 }
-                if (maze[next.first][next.second] == '.') {
+                if (maze[next.first][next.second] == '#') {
+                    break
+                } else {
                     maze[next.first][next.second] = dir.c
                     pos = next
-                } else if (maze[next.first][next.second] == '#') {
-                    break
                 }
             } else {
                 check(dir == Direction.UP)
@@ -120,18 +117,17 @@ class Day22(input: String) {
                 if (next.first < 0) {
                     next = maze.lastIndex to pos.second
                 }
-                while (maze[next.first][next.second] != '.' &&
-                    maze[next.first][next.second] != '#') {
+                while (maze[next.first][next.second] !in listOf('.', '#', '^', 'V', '>', '<') ) {
                     next = next.first - 1 to next.second
                     if (next.first < 0) {
                         next = maze.lastIndex to pos.second
                     }
                 }
-                if (maze[next.first][next.second] == '.') {
+                if (maze[next.first][next.second] == '#') {
+                    break
+                } else {
                     maze[next.first][next.second] = dir.c
                     pos = next
-                } else if (maze[next.first][next.second] == '#') {
-                    break
                 }
             }
         }
@@ -139,8 +135,6 @@ class Day22(input: String) {
     }
 
     fun part1(): Long  {
-        println(moveInstructions)
-
         val startCol = maze[0].indexOfFirst { it == '.' }
         var pos = Pair(0, startCol)
         var dir = Direction.RIGHT
@@ -156,8 +150,8 @@ class Day22(input: String) {
                 if (c.code == 10 ) return@forEach // line feed
                 // do the move
                 pos = move(moveAmt, pos, dir)
-                maze.print()
-                println()
+//                maze.print()
+//                println()
                 moveAmt = 0
                 check(c == 'L' || c == 'R')
                 dir = if (c == 'L') {
@@ -165,13 +159,13 @@ class Day22(input: String) {
                 } else {
                     dir.turnRight()
                 }
-                println("turning $c, new dir is ${dir.name}")
+//                println("turning $c, new dir is ${dir.name}")
                 maze[pos.first][pos.second] = dir.c
             }
         }
         // do last move
         pos = move(moveAmt, pos, dir)
-        maze.print()
+//        maze.print()
 
         return (pos.first + 1) * 1000L + (pos.second + 1) * 4 + dir.num
     }
@@ -184,9 +178,8 @@ fun main() {
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText()
 
     val testSolver = Day22(readInputAsOneLine("Day22_test"))
-    println(testSolver.part1())
+    check(testSolver.part1()==6032L)
 
     val solver = Day22(readInputAsOneLine("Day22"))
     println(solver.part1())
-//    println(solver.part2())
 }
