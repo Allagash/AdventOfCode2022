@@ -88,7 +88,49 @@ class Day23(input: String) {
         return xLength * yLength - points.size
     }
 
-    fun part2(): Long = 0L
+    fun part2(): Int {
+        val dirs = mutableListOf(Dir.NORTH, Dir.SOUTH, Dir.WEST, Dir.EAST)
+        // for each point, add new proposed point
+
+        var count = 0
+        do {
+            count++
+            val prevPts = points.toSet()
+            val newPts = mutableMapOf<Pt, List<Pt>>()
+            points.forEach nextPt@{ p ->
+                if (p.generateNeighbors().none { it in points }) {
+                    check(p !in newPts)
+                    newPts[p] = listOf(p)
+                    return@nextPt // no neighbors, don't move
+                }
+                run {
+                    dirs.forEach { d ->
+                        if (d.testPts.none { (p + it) in points}) {
+                            val movers = newPts.getOrElse(p + d.movePt) { emptyList() }
+                            newPts[p + d.movePt] = movers + listOf(p)
+                            return@nextPt
+                        }
+                    }
+                    check(p !in newPts)
+                    newPts[p] = listOf(p)  // can't move, add original position
+                }
+            }
+            // Part 2, move
+            val newConfig = mutableSetOf<Pt>()
+            for ((pt, movers) in newPts) {
+                if (movers.size == 1) {
+                    newConfig.add(pt) // new pos for 1 elf
+                } else {
+                    newConfig.addAll(movers) // these elves can't move
+                }
+            }
+            check(newConfig.size == points.size) { "${newConfig.size}, old ${points.size}" }
+            points = newConfig
+
+            dirs.add(dirs.removeFirst())
+        } while (points != prevPts)
+        return count
+    }
 }
 
 fun main() {
@@ -97,7 +139,11 @@ fun main() {
 
     val testSolver = Day23(readInputAsOneLine("Day23_test2"))
     check(testSolver.part1()==110)
+    val testSolver2 = Day23(readInputAsOneLine("Day23_test2"))
+    check(testSolver2.part2()==20)
 
     val solver = Day23(readInputAsOneLine("Day23"))
     println(solver.part1())
+    val solver2 = Day23(readInputAsOneLine("Day23"))
+    println(solver2.part2())
 }
