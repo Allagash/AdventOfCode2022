@@ -152,44 +152,51 @@ class Day24(input: String) {
     }
 
     fun part1(): Int {
+        return BFS(startPos, endPos, 0)
+    }
+
+    fun part2(): Int {
+        val time1 = BFS(startPos, endPos, 0)
+        val time2 = BFS(endPos, startPos, time1)
+        return BFS(startPos, endPos, time2)
+    }
+
+    private fun BFS(start: Pt, end: Pt, startTime: Int): Int {
         val queue = mutableListOf<State>()
-        val startMoves = startPos.getMoves(1)
-        queue.addAll(startMoves.map { State(it, 1) })
+        val startMoves = start.getMoves(startTime + 1)
+        queue.addAll(startMoves.map { State(it, startTime + 1) })
         val cache = hashSetOf<State>()
         while (queue.isNotEmpty()) {
             val state = queue.removeFirst()
-            if (state.pt == endPos) {
+            if (state.pt == end) {
                 return state.time
             }
             if (state in cache) continue
             cache.add(state)
             val newTime = state.time + 1
             val newMoves = state.pt.getMoves(newTime)
-            queue.addAll(newMoves.map{State(it, newTime)})
+            queue.addAll(newMoves.map { State(it, newTime) })
         }
         return 0 // we failed
-    }
-
-    fun part2(): Int {
-        return 0
     }
 }
 
 fun main() {
-
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText()
 
     val testSolver = Day24(readInputAsOneLine("Day24_test"))
-    check(testSolver.part1_astar() == 18)
+    check(testSolver.part1() == 18)
+    check(testSolver.part2() == 54)
 
     val solver = Day24(readInputAsOneLine("Day24"))
-    var result2 : Int
+    var result : Int
+
     var timeInMillis = measureTimeMillis {
-        result2 = solver.part1_astar()
+        result = solver.part1()
     }
-    println("a-star $result2, time is $timeInMillis")
+    println("part 1 $result, time is $timeInMillis ms")
     timeInMillis = measureTimeMillis {
-        result2 = solver.part1()
+        result = solver.part2()
     }
-    println("BFS $result2, time is $timeInMillis")
+    println("part 2 $result, time is $timeInMillis ms")
 }
