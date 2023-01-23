@@ -2,19 +2,21 @@ import java.io.File
 import java.lang.Exception
 import java.util.*
 import kotlin.math.abs
+import kotlin.system.measureTimeMillis
 
 // Advent of Code 2022, Day 24: Blizzard Basin
 class Day24(input: String) {
 
     private val startCol: Int
     private val endCol: Int
+    private val startPos: Pt
+    private val endPos: Pt
     private val dirs: List<List<List<Char>>>
 
     data class Pt(val r: Int, val c: Int) // row and column
 
     // Manhattan distance
     private fun Pt.distance(other: Pt) = abs(this.r - other.r) + abs(this.c - other.c)
-
 
     data class State(val pt: Pt, val time: Int)
 
@@ -34,6 +36,8 @@ class Day24(input: String) {
                 }
             }
         }
+        startPos = Pt(-1, startCol)
+        endPos = Pt(dirs[0].lastIndex + 1, endCol)
     }
 
     // A* search
@@ -50,19 +54,7 @@ class Day24(input: String) {
         while (openSet.isNotEmpty()) {
             val current = openSet.remove()
             if (current.first == goal) {
-                println("goal is $goal")
                 cost = costSoFar[current.first to current.second]!!
-                var backPos : Pt? = current.first
-                var backTime : Int? = current.second
-                val path = mutableListOf<Pt>()
-                while (backPos != null) {
-                    path.add(0, backPos)
-                    println("curr pos is (${backPos.r}, ${backPos.c}), time is $backTime")
-                    val p = cameFrom[backPos to backTime]
-                    backPos = p?.first
-                    backTime = p?.second
-                }
-                printMap(current.second, path)
                 break
             }
             val newTime = current.second + 1
@@ -80,7 +72,7 @@ class Day24(input: String) {
         return cost
     }
 
-    // what is the map position at this time
+    // Return '.', blizzard direction, or '2', '3', '4' for number of blizzards at this location & time
     private fun getPos(row: Int, col: Int, time: Int) : Char {
         val chars = DIR_LIST.mapIndexed { idx, c ->
             val width = dirs[idx][row].size
@@ -147,9 +139,8 @@ class Day24(input: String) {
         val possibleMoves = listOf(Pt(r, c), Pt(r - 1, c), Pt(r + 1, c), Pt(r, c - 1), Pt(r, c + 1))
         val width = dirs[0][0].size
         val height = dirs[0].size
-        // have to add end position
         return possibleMoves.filter {
-            (it == Pt(-1, startCol)) || // start position
+            (it == startPos) || (it == endPos) ||
                     ((it.r in 0 until height) &&
                      (it.c in 0 until width) &&
                      ('.' == getPos(it.r, it.c, time)))
@@ -157,52 +148,26 @@ class Day24(input: String) {
     }
 
     fun part1_astar() : Int {
-        // cache position & time
-        val start = Pt(-1, startCol)
-        val end = Pt(dirs[0].lastIndex, endCol) // spot just above end position
-
-        return aStarSearch(start, end)
+        return aStarSearch(startPos, endPos)
     }
 
     fun part1(): Int {
-        // cache position & time
-        val start = Pt(-1, startCol)
-        val end = Pt(dirs.lastIndex, endCol) // spot just above end position
-
-        // can I wait in same spot?
         val queue = mutableListOf<State>()
-        val startMoves = start.getMoves(1)
-        startMoves.forEach {
-            queue.add(State(it, 1))
-        }
-//        for (i in 0..10) {
-//            println("\nState $i")
-//            printMap(i)
-//        }
+        val startMoves = startPos.getMoves(1)
+        queue.addAll(startMoves.map { State(it, 1) })
         val cache = hashSetOf<State>()
-        var endTime = 0
-        var maxTime = 0
         while (queue.isNotEmpty()) {
             val state = queue.removeFirst()
-            if (state.pt == end) {
-//                printMap(state.time)
-//                println("final position is (${state.pt.r}, ${state.pt.c})")
-                endTime =  state.time + 1 // we're 1 away from actual end pos
-                return endTime //!FIX need the min end time here? or not since BFS
+            if (state.pt == endPos) {
+                return state.time
             }
             if (state in cache) continue
             cache.add(state)
-            if (state.time > maxTime) {
-                maxTime = state.time
-//                println("time = $maxTime, cache size is ${cache.size}")
-            }
             val newTime = state.time + 1
             val newMoves = state.pt.getMoves(newTime)
-            newMoves.forEach {
-                queue.add(State(it, newTime))
-            }
+            queue.addAll(newMoves.map{State(it, newTime)})
         }
-        return 0
+        return 0 // we failed
     }
 
     fun part2(): Int {
@@ -215,11 +180,16 @@ fun main() {
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText()
 
     val testSolver = Day24(readInputAsOneLine("Day24_test"))
-    val result = testSolver.part1_astar() + 1
-    println("test input : $result")
-//    check(result == 18)
+    check(testSolver.part1_astar() == 18)
 
     val solver = Day24(readInputAsOneLine("Day24"))
-//    println(solver.part1())
-    println(solver.part1_astar() + 1) // 319, 325 too low, 400 too high (325, 400) - 362 not right
+    var result2 : Int
+    var timeInMillis = measureTimeMillis {
+        result2 = solver.part1_astar()
+    }
+    println("a-star $result2, time is $timeInMillis")
+    timeInMillis = measureTimeMillis {
+        result2 = solver.part1()
+    }
+    println("BFS $result2, time is $timeInMillis")
 }
