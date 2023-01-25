@@ -82,17 +82,19 @@ fun main() {
 
         val relevantValves = valves.values.filter { it.rate != 0 }.toSet()
 
-        var maxTime1 = 0
-        var maxRelease1 = 0
+//        var maxTime = 0
+        var maxRelease = 0
         while (queue.isNotEmpty()) {
             val state = queue.removeFirst()
             if (state.time > MAX_TIME) continue
-            if (state.time > maxTime1) {
-                maxTime1 = state.time
-                println("time is $maxTime1, queue size is ${queue.size}")
-            }
-            if (state.totalRelease > maxRelease1) println("max release = ${state.totalRelease}")
-            maxRelease1 = max(state.totalRelease, maxRelease1)
+            val maxPossible = scoreUpperBound(relevantValves, state.valvesOn, state.currLocn, state.time, state.totalRelease)
+            if (maxPossible < maxRelease) continue
+//            if (state.time > maxTime) {
+//                maxTime = state.time
+//                println("time is $maxTime, queue size is ${queue.size}")
+//            }
+//            if (state.totalRelease > maxRelease) println("max release = ${state.totalRelease}")
+            maxRelease = max(state.totalRelease, maxRelease)
             val valvesOff = relevantValves - state.valvesOn
             val nextVisits = valvesOff.map {
                 val idx1 = valveNames.indexOf(state.currLocn.name)
@@ -102,8 +104,8 @@ fun main() {
             }
             queue.addAll(nextVisits)
         }
-        println("max = $maxRelease1")
-        return maxRelease1
+//        println("max = $maxRelease")
+        return maxRelease
     }
 
     fun part2(input: String): Int {
