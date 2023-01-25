@@ -5,17 +5,9 @@ import kotlin.system.measureTimeMillis
 // Advent of Code 2022, Day 16, Proboscidea Volcanium
 
 
-data class Valve(val name: String, val rate: Int, val tunnels: List<String>)
+data class ValveData(val name: String, val rate: Int, val tunnels: List<String>)
 
-data class State(val time: Int, val totalRelease: Int, val valvesOn: Set<Valve>)
-
-enum class Action {
-    TURN_ON, MOVE
-}
-
-data class Route(val start: String, val end: String, val dist: Int)
-
-data class Step(val action: Action, val valve: Valve, val currState: State, val timeCost: Int = 1)
+data class State(val currLocn: ValveData, val time: Int, val totalRelease: Int, val valvesOn: Set<ValveData>)
 
 val MAX_TIME = 30
 val MAX_ELAPSED_MIN = 30
@@ -25,7 +17,7 @@ fun main() {
 
     fun readInputAsOneLine(name: String) = File("src", "$name.txt").readText().trim()
 
-    fun scoreUpperBound(allValves: Set<Valve>, valvesOn: Set<Valve>, currValve: Valve,
+    fun scoreUpperBound(allValves: Set<ValveData>, valvesOn: Set<ValveData>, currValveData: ValveData,
                         time: Int, currRelease: Int) : Int {
         check(allValves.size >= valvesOn.size)
 
@@ -34,7 +26,7 @@ fun main() {
         var currTime = time
         while (currTime < MAX_TIME && valvesOff.isNotEmpty()) {
             val nextValve = valvesOff.removeFirst()
-            if (nextValve != currValve) {
+            if (nextValve != currValveData) {
                 currTime++
             }
             score += (MAX_TIME - currTime) * nextValve.rate
@@ -42,157 +34,76 @@ fun main() {
         return score
     }
 
-    // For debugging: print each route in the map in the format
-    //   AA 0->DD 20
-    // with the name & rate for each node.
-    // This output can be pasted into drawio to generate a map.
-    // See https://www.diagrams.net/blog/insert-from-text
-    fun printRoutes(valves: Map<String, Valve>) {
-        valves.forEach {
-            it.value.tunnels.forEach { next ->
-                val nextRate = valves[next]!!.rate
-                println("${it.key} ${it.value.rate}->$next $nextRate")
-            }
-        }
-    }
-
     fun part1(input: String): Int {
+        // list of valve objects, no strings
+        // floyd-warshall algorithm distances between all valves that need to be turned on
+        // BFS all to all with cache - see if cache is used
+
         val valves = input.split("\n")
             .map {
                 it.split(" ")
                     .drop(1) // initial empty
             }.map {
-                Valve(it[0], it[3].split("=", ";")[1].toInt(),
+                ValveData(it[0], it[3].split("=", ";")[1].toInt(),
                     it.subList(8, it.size).map { if (it.last() == ',') it.dropLast(1) else it })
             }.associateBy { it.name }.toMutableMap()
 
-//        printRoutes(valves)
-
-
-        // throw out nodes with 0 flow rate
-        val routeDist = mutableMapOf<Pair<String, String>, Int>()
-        val valveRoutes = mutableMapOf<String, MutableList<String>>()
-        valves.forEach {
-            val prev = it.key
-            val next = mutableListOf<Route>()
-            it.value.tunnels.forEach {
-                next.add(Route(prev, it, 1))
+        // Floyd-Warshall
+        val valveNames = valves.keys.toList()
+        val dist = Array (valveNames.size) { IntArray(valveNames.size) { Int.MAX_VALUE / 3} } // div by 3 so we don't overflow
+        for (i in 0..valveNames.lastIndex) {
+            dist[i][i] = 0
+        }
+        for (v in valveNames) {
+            for (next in valves[v]!!.tunnels) {
+                val i1 = valveNames.indexOf(v)
+                val i2 = valveNames.indexOf(next)
+                dist[i1][i2] = 1
             }
-
-            val result =  mutableListOf<Route>()
-
-            while (next.isNotEmpty()) {
-                val nextRoute = next.removeFirst()
-                // if (nextRoute.start != "AA" && valves[nextRoute.start]!!.rate == 0) continue
-                val nextRate = valves[nextRoute.end]!!.rate
-                if (nextRate == 0 && nextRoute.end != "AA") {
-                    // get next, but not curr
-                    val list = valves[nextRoute.end]!!.tunnels.filterNot { it == nextRoute.start }
-                    list.forEach {
-                        next.add(Route(nextRoute.end, it, nextRoute.dist + 1))
+        }
+        for (k in 0..valveNames.lastIndex) {
+            for (i in 0..valveNames.lastIndex) {
+                for (j in 0..valveNames.lastIndex) {
+                    if (dist[i][j] > dist[i][k] + dist[k][j]) {
+                        dist[i][j] = dist[i][k] + dist[k][j]
                     }
-                } else {
-                    result.add(nextRoute)
                 }
-            }
-
-            result.forEach { r ->
-                if (prev != "AA" && valves[prev]!!.rate == 0) return@forEach
-                println("$prev -> ${r.end} takes ${r.dist}")
-                // set up valves2 with these values & distances
-                routeDist[(prev to r.end)] = r.dist // route from prev node to end node is distance
-                if (valveRoutes[prev] == null) {
-                    valveRoutes[prev] = mutableListOf()
-                }
-                valveRoutes[prev]?.add(r.end)
-            }
-
-        }
-        // could do groupby
-        val routedValves = mutableMapOf<String, Valve>()
-        valveRoutes.keys.forEach {
-            routedValves[it] = Valve(it, valves[it]!!.rate, valveRoutes[it]!!.toList())
-        }
-        valves.clear()
-
-//        val valvesRateZero = valves.values.filter { it.rate == 0 }.toSet()
-
-        var currValve = routedValves["AA"]!!
-        var maxRelease = 0
-        val startingState = State(0, 0, setOf()) // consider rate==0 to be on already
-        // if flow rate == 0, set to "on"
-
-        // Don't add turn on AA - rate is 0
-        var nextSteps = currValve.tunnels.map {
-            Step(
-                Action.MOVE, routedValves[it]!!, startingState,
-                routeDist[currValve.name to routedValves[it]!!.name]!!
-            )
-        }.sortedWith(compareByDescending { it.valve.rate }).toMutableList()
-        var maxTime = 0
-        //NEW - generate all moves
-        // if moving to valve with rate - 0
-          // - get all connecting valves that are not current valve
-
-//        val cacheVistedValves = mutableSetOf(currValve to valvesRateZero)
-
-        while (nextSteps.isNotEmpty()) {
-            val step = nextSteps.removeFirst()
-            currValve = step.valve
-            val time = step.currState.time + step.timeCost
-            //println("Time is $time, ${step.valve.name}, ${step.action}, ${step.currState.time}, ${step.currState.totalRelease}, ${step.currState.valvesOn.map { it.name }}")
-
-            if (time > maxTime) {
-                maxTime = time
-                println("time is $maxTime, queue size is ${nextSteps.size}")
-            }
-            val currRelease = step.currState.totalRelease
-            var valvesTurnedOn = step.currState.valvesOn
-            if (time > MAX_ELAPSED_MIN) break
-            if (step.action == Action.TURN_ON) {
-                check(step.valve !in valvesTurnedOn)
-            }
-            val upperBound = scoreUpperBound(routedValves.values.toSet(), valvesTurnedOn, currValve, time, currRelease)
-//            println("upper bound is $upperBound, max score = $maxRelease")
-            if (upperBound < maxRelease) continue // we can't beat the current high score
-
-            if (step.action == Action.TURN_ON && step.valve !in valvesTurnedOn) {
-                valvesTurnedOn = valvesTurnedOn + listOf(step.valve!!)
-                //println("Turn on ${step.valve.name}")
-                val newRelease = currRelease + (MAX_TIME - time) * currValve.rate
-                if (newRelease > maxRelease) println("max release = $newRelease")
-                maxRelease = max(newRelease, maxRelease)
-                // Generate next steps with this name on
-                val next = currValve.tunnels.map {
-                    Step(
-                        Action.MOVE, routedValves[it]!!, State(time, newRelease, valvesTurnedOn),
-                        routeDist[currValve.name to routedValves[it]!!.name]!!
-                    )
-                }.sortedWith(compareByDescending { it.valve.rate * (if (it.valve !in valvesTurnedOn) 1000 else -1000) })
-//                println("sorted next valves: $next")
-                nextSteps.addAll(next)
-            } else {
-                check(step.action == Action.MOVE)
-                if (currValve !in valvesTurnedOn) {
-                    nextSteps.add(Step(Action.TURN_ON, currValve, State(time, currRelease, valvesTurnedOn), 1))
-                }
-                nextSteps.addAll(currValve.tunnels.map {
-                    Step(Action.MOVE, routedValves[it]!!, State(time, currRelease, valvesTurnedOn), routeDist[currValve.name to routedValves[it]!!.name]!!)
-                })
             }
         }
 
-        // move + open = 2 min
-        // just move = 1 min, may want to move w/o open, argh
+        // state is time, rates, valves on
+        // We always start from Valve AA
+        val indexAA = valveNames.indexOf("AA")
+        val queue = valves.values.filter {it.rate != 0}.map {
+            val idx =  valveNames.indexOf(it.name)
+            val time = dist[indexAA][idx] + 1 // takes 1 min to turn on valve
+            State(it, time, (MAX_TIME - time) * it.rate, setOf(it))
+        }.toMutableList()
 
+        val relevantValves = valves.values.filter { it.rate != 0 }.toSet()
 
-        // use groupby - map by name
-        // start at aa
-        // dfs, keep track of where visited, time, rate
-        // subtract when go back - currmax and max
-
-
-        return maxRelease
+        var maxTime1 = 0
+        var maxRelease1 = 0
+        while (queue.isNotEmpty()) {
+            val state = queue.removeFirst()
+            if (state.time > MAX_TIME) continue
+            if (state.time > maxTime1) {
+                maxTime1 = state.time
+                println("time is $maxTime1, queue size is ${queue.size}")
+            }
+            if (state.totalRelease > maxRelease1) println("max release = ${state.totalRelease}")
+            maxRelease1 = max(state.totalRelease, maxRelease1)
+            val valvesOff = relevantValves - state.valvesOn
+            val nextVisits = valvesOff.map {
+                val idx1 = valveNames.indexOf(state.currLocn.name)
+                val idx2 = valveNames.indexOf(it.name)
+                val time = dist[idx1][idx2] + 1 + state.time // takes 1 min to turn on valve
+                State(it, time, state.totalRelease + (MAX_TIME - time) * it.rate, state.valvesOn + setOf(it))
+            }
+            queue.addAll(nextVisits)
+        }
+        println("max = $maxRelease1")
+        return maxRelease1
     }
 
     fun part2(input: String): Int {
@@ -212,5 +123,6 @@ fun main() {
         val input = readInputAsOneLine("Day16")
         println(part1(input))
     }
+    // Part 1 time is 4 min for real input
     println("time for real input part 1 is $timeInMillis")
 }
