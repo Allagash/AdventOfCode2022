@@ -11,8 +11,6 @@ data class ValveData(val name: String, val index: Int, val rate: Int, val tunnel
 data class State(val currLocn: ValveData, val time: Int, val totalRelease: Int, val valvesOn: Set<ValveData>)
 data class State2(val currLocn: List<ValveData?>, val time: List<Int>, val totalRelease: Int, val valvesOn: Set<ValveData>)
 
-val MAX_ELAPSED_MIN = 30
-
 
 fun main() {
 
@@ -137,24 +135,24 @@ fun main() {
         while (queue.isNotEmpty()) {
             var state = queue.remove()
             //!FIX but what if only 1 time is over - continue with other time?
-            if (state.time.max() > MAX_TIME) continue
+            if (state.time.min() > MAX_TIME) continue
             // don't count the person/elephant who has exceeded time, but the other one keeps moving
-//            if (state.time[0] > MAX_TIME) {
-//                state = state.copy(
-//                    currLocn = listOf(null, state.currLocn[1])
-//                )
-//            }
-//            if (state.time[1] > MAX_TIME) {
-//                state = state.copy(
-//                    currLocn = listOf(state.currLocn[0], null)
-//                )
-//            }
+            if (state.time[0] > MAX_TIME) { // or should it be >=  ??
+                state = state.copy(
+                    currLocn = listOf(null, state.currLocn[0])
+                )
+            }
+            if (state.time[1] > MAX_TIME) {
+                state = state.copy(
+                    currLocn = listOf(state.currLocn[1], null)
+                )
+            }
             //!FIX have to fix upperbound to deal with simultaneous movement - add 2 valves per minute
             val treatAsPart1 = state.currLocn.filterNotNull().size != 2
             val maxPossible = scoreUpperBound(relevantValves, state.valvesOn, state.time.min(), state.totalRelease,
                 treatAsPart1, MAX_TIME)
             if (maxPossible < maxRelease) continue
-            if (state.time.max() > maxTime) {
+            if (state.time.min() > maxTime) {
                 maxTime = state.time.max()
                 println("time is $maxTime, queue size is ${queue.size}")
             }
@@ -163,11 +161,41 @@ fun main() {
             }
             maxRelease = max(state.totalRelease, maxRelease)
             val valvesOff = relevantValves - state.valvesOn
-            for (v in valvesOff) {
+            val vTrips = if (state.currLocn[0] == null ) emptyList() else {
+                valvesOff.filter {v ->
+                    val time0 = dist[state.currLocn[0]!!.index][v.index] + 1 // takes 1 min to turn on valve
+                    state.time[0] + time0 < MAX_TIME
+                }
+            }
+            val eTrips = if (state.currLocn[1] == null ) emptyList() else {
+                valvesOff.filter {e ->
+                    val time1 = dist[state.currLocn[1]!!.index][e.index] + 1 // takes 1 min to turn on valve
+                    state.time[1] + time1 < MAX_TIME
+                }
+            }
+            if (vTrips.isEmpty() && eTrips.isEmpty()) continue
+            if (vTrips.isEmpty()) {
+                for (e in eTrips) {
+                    val time1 = dist[state.currLocn[1]!!.index][e.index] + 1 // takes 1 min to turn on valve
+                    val rel1 = (MAX_TIME - (state.time[1] + time1)) * e.rate
+                    queue.add(State2(listOf(null, e), listOf(MAX_TIME, time1 + state.time[1]),
+                        state.totalRelease + rel1, state.valvesOn + setOf(e)))
+                }
+            }
+            if (eTrips.isEmpty()) {
+                for (v in vTrips) {
+                    val time0 = dist[state.currLocn[0]!!.index][v.index] + 1 // takes 1 min to turn on valve
+                    val rel0 = (MAX_TIME - (state.time[0] + time0)) * v.rate
+                    queue.add(State2(listOf(v, null), listOf(time0 + state.time[0], MAX_TIME),
+                        state.totalRelease + rel0 , state.valvesOn + setOf(v) ))
+                }
+            }
+            if (vTrips.isEmpty() || eTrips.isEmpty()) continue
+            for (v in vTrips) {
                 val time0 = dist[state.currLocn[0]!!.index][v.index] + 1 // takes 1 min to turn on valve
                 if (state.time[0] + time0 >= MAX_TIME) continue
                 val rel0 = (MAX_TIME - (state.time[0] + time0)) * v.rate
-                for (e in valvesOff) {
+                for (e in eTrips) {
                     if (v == e) continue
 //                    val time1 = if (state.currLocn[0] != null) {
 //                    } else 0
@@ -187,28 +215,28 @@ fun main() {
     }
 
     val testInput = readInputAsOneLine("Day16_test")
-//    var timeInMillis = measureTimeMillis {
-//        check(part1(testInput, 30) == 1651)
-//    }
-//    println("time for test input, part 1 is $timeInMillis ms")
-
     var timeInMillis = measureTimeMillis {
-        println(part2(testInput, 26) ) // should be 1707 for 26 min
+        check(part1(testInput, 30) == 1651)
+    }
+    println("time for test input, part 1 is $timeInMillis ms")
+
+    timeInMillis = measureTimeMillis {
+        check(part2(testInput, 26) == 1707) // should be 1707 for 26 min
     }
     println("time for test input, part 2 is $timeInMillis ms")
     println("\nNow real input")
-//
-//    timeInMillis = measureTimeMillis {
-//        val input = readInputAsOneLine("Day16")
-//        println(part1(input, 30))
-//    }
-//    // Part 1 time is 1 min for real input
-//    println("time for real input part 1 is $timeInMillis ms")
-//
+
+    timeInMillis = measureTimeMillis {
+        val input = readInputAsOneLine("Day16")
+        println(part1(input, 30))
+    }
+    // Part 1 time is 1 min for real input
+    println("time for real input part 1 is $timeInMillis ms")
+
     timeInMillis = measureTimeMillis {
         val input = readInputAsOneLine("Day16")
         println(part2(input, 26)) // 2206 is too low
     }
-//    // Part 1 time is 1 min for real input
+
     println("time for real input part 2 is $timeInMillis ms") // 77 sec
 }
