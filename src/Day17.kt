@@ -39,9 +39,33 @@ class Rock5 : Rock {
     override val width = 2
 }
 
-data class Offset(var x: Int, var y: Int)
+data class Offset(val x: Int, val y: Int)
 
-data class Point(var x: Int, var y: Int)
+data class Point(val x: Long, val y: Long)
+
+data class Day17CacheItem(val rockIdx: Long, val moveIdx: Long, val yHeight: ULongArray) {
+    @OptIn(ExperimentalUnsignedTypes::class)
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Day17CacheItem
+
+        if (rockIdx != other.rockIdx) return false
+        if (moveIdx != other.moveIdx) return false
+        if (!yHeight.contentEquals(other.yHeight)) return false
+
+        return true
+    }
+
+    @OptIn(ExperimentalUnsignedTypes::class)
+    override fun hashCode(): Int {
+        var result = rockIdx
+        result = 31 * result + moveIdx
+        result = 31 * result + yHeight.contentHashCode()
+        return result.toInt()
+    }
+}
 
 val shapes = listOf(Rock1(), Rock2(), Rock3(), Rock4(), Rock5())
 
@@ -118,10 +142,10 @@ fun main() {
         val rock4 = listOf(Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1))
         val rocks = listOf(rock0, rock1, rock2, rock3, rock4)
 
-        fun printWorld(highestY: Int, world: Set<Point>) {
-            for (y in highestY + 4 downTo 0) {
+        fun printWorld(highestY: Long, world: Set<Point>) {
+            for (y in highestY + 4 downTo 0L) {
                 print('|')
-                for (x in 0..6) {
+                for (x in 0L..6L) {
                     val c = if (Point(x, y) in world) '#' else '.'
                     print(c)
                 }
@@ -141,18 +165,66 @@ fun main() {
             return false
         }
 
-        fun findHeight() : Long {
-            var highestY = -1
-            var moveIdx = -1
-            val world = mutableSetOf<Point>()
+        fun getCacheItem(rockIdx: Long, moveIdx: Long, yHeight: LongArray, world: Set<Point>) : Day17CacheItem {
+            val arr = ULongArray(7)
+            val max = yHeight.max()
+            for (x in 0L..6L) {
+                var bitmask : ULong = 0u
+                val startVal = max(0, max - 64 + 1).toLong()
+                check(max - startVal + 1 <= 64)
+                for (i in startVal..max) {
+                    val bit : UInt = if (Point(x, i) in world) 1u else 0u
+                    bitmask = bitmask.shl(1) + bit
+                }
+                arr[x.toInt()] = bitmask
+            }
+            return Day17CacheItem(rockIdx, moveIdx, arr)
+        }
 
-            repeat(2022) {i ->
-                val rock = rocks[i % rocks.size]
+        fun findHeight() : Long {
+            var highestY = -1L
+            var highYPrev = 0L
+            var moveIdx : Long = -1
+            var prevRock = -1L
+            val deltaYs = mutableListOf<Long>()
+            val world = mutableSetOf<Point>()
+            val yHeight = LongArray(7)
+            val cache = mutableSetOf<Day17CacheItem>()
+            var useCache = true
+            var yOffset = -1L
+            println("jets len = ${jets.length}")
+
+            var rocksLeft = 1_000_000_000_000
+            while (rocksLeft > 0) {
+                val i = 1_000_000_000_000 - rocksLeft
+                rocksLeft--
+                println("rocksLeft = $rocksLeft")
+                val rockIdx = (i % rocks.size).toLong()
+                val rock = rocks[rockIdx.toInt()]
                 var pt = Point(2, highestY + 4)
                 while (true) {
                     moveIdx = (moveIdx+1) % jets.length
-                    check(jets[moveIdx] == '<' || jets[moveIdx] == '>')
-                    val push = if (jets[moveIdx] == '<') -1 else 1
+                    val cacheItem = getCacheItem(rockIdx, moveIdx, yHeight, world)
+                    if (useCache && cacheItem in cache) {
+                        println("Hit the cache at i $i, move $moveIdx, rock $rockIdx, high Y $highestY, delta Y = ${highestY - highYPrev}, delta rock = ${i - prevRock}")
+                        val deltaY = highestY - highYPrev
+                        if (deltaY in deltaYs) {
+                            useCache = false
+                            val deltaRock = i - prevRock
+                            val cyclesLeft = rocksLeft / deltaRock
+                            rocksLeft -= cyclesLeft * deltaRock
+                            yOffset = cyclesLeft * deltaY
+                        } else {
+                            deltaYs.add(highestY - highYPrev)
+                        }
+                        highYPrev = highestY
+                        prevRock  = i
+                        cache.clear()
+                    }
+                    cache.add(cacheItem)
+
+                    check(jets[moveIdx.toInt()] == '<' || jets[moveIdx.toInt()] == '>')
+                    val push = if (jets[moveIdx.toInt()] == '<') -1 else 1
                     var nextPt = Point(pt.x + push, pt.y)
                     if (!intersect(nextPt, rock, world)) {
                         pt = nextPt
@@ -168,12 +240,14 @@ fun main() {
                     val x = it.x + pt.x
                     val y = it.y + pt.y
                     world.add(Point(x,y))
-                    highestY = max(highestY, y)
+                    highestY = max(highestY, y )
+                    yHeight[x.toInt()] = max(y + 1, yHeight[x.toInt()])
                 }
 //                printWorld(highestY, world)
             }
+            println(yHeight.toList())
 
-            return highestY + 1L
+            return highestY + yOffset + 1 // first row filled in is y = 0
         }
 
     }
@@ -185,9 +259,11 @@ fun main() {
 
     val testInput = readInputAsOneLine("Day17_test")
     check(part1(testInput)==3068)
-    println("${part2(testInput)} should equal 3068")
+//    println("${part2(testInput)} should equal 3068")
 
     val input = readInputAsOneLine("Day17")
-    println(part1(input))
+//    println(part1(input))
+    println(part2(input))
+//    println(part2(input, 4_000_000))
 //    println(part2(input, 4_000_000))
 }
